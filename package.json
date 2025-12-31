@@ -1,18 +1,17 @@
 {
   "name": "node-addon",
-  "version": "0.1",
+  "version": "0.0.1",
   "module": "lib/node-addon.js",
   "type": "module",
-  "gypfile": true,
   "scripts": {
-    "build": "node-gyp build",
+    "build": "echo building...; make",
     "build:watch": "ls src/* | entr npm run build",
-    "debug": "which entr",
+    "debug": "",
     "dev": "npm-run-all --silent rebuild --parallel build:watch test:watch",
-    "rebuild": "node-gyp rebuild",
+    "rebuild": "make clean all",
     "reset": "rm -rf node_modules package-lock.json build",
     "test": "echo testing...; node --experimental-addon-modules --no-warnings=ExperimentalWarning ./test/test-addon.js",
-    "test:watch": "find package.json lib test  build/Release/*.node -type f | entr npm run test"
+    "test:watch": "find package.json lib test build/*.node -type f | entr npm run test"
   },
   "dependencies": {
     "node-addon-api": "^1.1.0"
