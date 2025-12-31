@@ -25,8 +25,9 @@ INCLUDES 	:= -I$(NODE_INC) -I$(NAPI_INC)
 RED     := $(shell tput setaf 9)	# [1, 9, 124, 160, 196, 202]
 GREEN   := $(shell tput setaf 2)	# [2, 10, 40, 41, 70, 71]
 RESET   := $(shell tput sgr0)	# Reset terminal to default
-ERROR   = printf "$(strip $(RED))error: %s$(RESET)\n" >&2
-OK      = printf "$(strip $(GREEN))%s$(RESET)\n"
+
+DONE_ERROR  = printf "$(strip $(RED))error: %s$(RESET)\n" >&2
+DONE_OK     = printf "$(strip $(GREEN))%s$(RESET)\n"
 
 ifeq ($(shell uname), Darwin)
 	LDFLAGS := -undefined dynamic_lookup -dynamiclib
@@ -37,19 +38,22 @@ endif
 .PHONY: all clean build test dev watch-make watch-test
 .NOTPARALLEL: clean
 
-all: build
+all: build test
 
 clean:
 	@ echo cleaning...
 	@ rm -rf $(DIR_BUILD)
-	@ $(OK) "cleaning ✓"
+	@ $(DONE_OK) "cleaning ✓"
 
 # developer mode to rebuild/retest on file changes
-dev: watch-make watch-test
-watch-make:
-	@ trap 'exit 0' INT; while true; do find src -name "*.cc" | entr -rnd $(MAKE) build; done
-watch-test:
-	@ trap 'exit 0' INT; while true; do find lib $(DIR_TEST) $(DIR_BUILD)/*.node -type f | entr -rnd $(MAKE) test; done
+WATCHFLAGS	:= MAKEFLAGS= --no-print-directory
+dev: build
+	@$(MAKE) $(WATCHFLAGS) watch-build & \
+		$(MAKE) $(WATCHFLAGS) watch-test & wait
+watch-build:
+	@watchexec --quiet --exts cc --ignore $(DIR_BUILD) -- $(MAKE) $(WATCHFLAGS) --quiet build
+watch-test: build
+	@watchexec --quiet --exts node,js --watch ./ --no-vcs-ignore --watch $(DIR_BUILD) -- $(MAKE) $(WATCHFLAGS) --quiet test
 
 build: $(OUTPUT)
 
@@ -59,9 +63,9 @@ test:
 	FILES="$$(ls $$NODE_FILES 2>/dev/null)"; \
 	if [ -n "$$FILES" ]; then \
 		node --experimental-addon-modules --no-warnings=ExperimentalWarning $(DIR_TEST)/*.js; \
-		$(OK) "testing ✓"; \
+		$(DONE_OK) "testing ✓"; \
 	else \
-		$(ERROR) "$$NODE_FILES files don't exist. Consider \"make build\" first"; \
+		$(DONE_ERROR) "$$NODE_FILES files don't exist. Consider \"make build\" first"; \
 		exit 1; \
 	fi
 
@@ -69,4 +73,4 @@ $(OUTPUT): $(SOURCE)
 	@ echo building...
 	@ mkdir -p $(DIR_BUILD)
 	@ $(CXX) $(CXXFLAGS) $(INCLUDES) $(LDFLAGS) $< -o $@
-	@ $(OK) "building ✓"
+	@ $(DONE_OK) "building ✓"
