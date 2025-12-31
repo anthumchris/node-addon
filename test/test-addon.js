@@ -17,5 +17,3 @@ function testName(name, expected) {
   const returnVal = (name == null || name == undefined) ? hello() : hello(name)
   assert.strictEqual(returnVal, expected, "Unexpected value returned")
 }
-
-console.log("testing ✅")
