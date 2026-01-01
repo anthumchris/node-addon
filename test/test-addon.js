@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { hello } from '../lib/addon.js'
+import { hello } from '../build/addon.js'
 
 assert(hello, "undefined named import")
 testName('world', 'hello world')
